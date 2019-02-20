@@ -1,0 +1,44 @@
+﻿@model JustDoIt.Models.ToDo
+@{
+    ViewBag.Title = "Index";
+}
+
+
+<div id="tableDiv"></div>
+
+<div id="todoCreateForm">
+
+    @using (Ajax.BeginForm("Create", "ToDoes",
+        new AjaxOptions
+        {
+            // Replace contents of tableDiv
+            InsertionMode = InsertionMode.Replace,
+            HttpMethod = "POST",
+            UpdateTargetId = "tableDiv"
+
+        }))
+        {
+        <div class="form-group">
+            <!--Sends a session Id with the post information-->
+            @Html.AntiForgeryToken()
+            @Html.LabelFor(model => model.Description, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.EditorFor(model => model.Description, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.Description, "", new { @class = "text-danger" })
+            </div>
+        </div>
+        }
+</div>
+
+@section Scripts{
+
+    <script src="~/Scripts/jquery.validate.unobtrusive.min.js"></script>
+    <script src="~/Custom_Scripts/BuildTable.js"></script>
+    <!--<script src="~/Scripts/angular.js"></script>
+    <script src="~/Custom_Scripts/Build.js"></script>-->
+    
+    <!--Enable client side validation-->
+    <!--Load all scripts needed with JQuery-->
+    @Scripts.Render("~/bundles/jqueryval")
+}
+
