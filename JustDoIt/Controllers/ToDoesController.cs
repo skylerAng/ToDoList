@@ -41,7 +41,24 @@ namespace JustDoIt.Controllers
             // Db query to find user object for the current user
             ApplicationUser currentUser = db.Users.FirstOrDefault
                 (x => x.Id == currentUserId);
-            return db.ToDos.ToList().Where(x => x.User == currentUser);
+
+            IEnumerable <ToDo> myToDoes = db.ToDos.ToList().Where(x => x.User == currentUser);
+
+            // Count completed tasks
+            int completeCount = 0;
+            foreach(ToDo toDo in myToDoes)
+            {
+                if (toDo.IsDone)
+                {
+                    completeCount++;
+                }
+            }
+
+            // Everything inside sent for View to access
+            // Cast to float to avoid integer excess
+            ViewBag.Percent = Math.Round(100f * ((float)completeCount / (float)myToDoes.Count()));
+
+            return myToDoes;
         }
 
         //
@@ -80,7 +97,7 @@ namespace JustDoIt.Controllers
         // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create([Bind(Include = "Id,Description,IsDone")] ToDo toDo)
+        public ActionResult AjaxCreate([Bind(Include = "Id,Description,IsDone")] ToDo toDo)
         {
             if (ModelState.IsValid)
             {
@@ -103,6 +120,8 @@ namespace JustDoIt.Controllers
 
                 // Save changes and then redirecting to the index
                 db.SaveChanges();
+
+                return RedirectToAction("Index");
                 
             }
 
@@ -117,10 +136,25 @@ namespace JustDoIt.Controllers
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
             ToDo toDo = db.ToDos.Find(id);
+
             if (toDo == null)
             {
                 return HttpNotFound();
             }
+
+            // Get the current User
+            string currentUserId = User.Identity.GetUserId();
+
+            // Db query to find user object for the current user
+            ApplicationUser currentUser = db.Users.FirstOrDefault
+                (x => x.Id == currentUserId);
+
+            // Check if user exists, if does not exist, return badrequest
+            if (toDo.User != currentUser){
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+
+
             return View(toDo);
         }
 
@@ -138,6 +172,33 @@ namespace JustDoIt.Controllers
                 return RedirectToAction("Index");
             }
             return View(toDo);
+        }
+
+        public ActionResult AjaxEdit(int? id, bool value)
+        {
+            // If it does not return an Id, it returns a bad request error
+            if (id == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+
+            // Then it tries to find the toDo with the id
+            ToDo toDo = db.ToDos.Find(id);
+            if (toDo == null)
+            {
+                return HttpNotFound();
+            }
+            else
+            {
+                toDo.IsDone = value;
+
+                // Modifies the entry, put this entry to toDo
+                db.Entry(toDo).State = EntityState.Modified;
+                db.SaveChanges();
+                return PartialView("_ToDoTable", GetMyTodoes());
+            }
+
+
         }
 
         // GET: ToDoes/Delete/5

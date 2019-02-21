@@ -8,6 +8,9 @@ namespace JustDoIt
         public static void RegisterGlobalFilters(GlobalFilterCollection filters)
         {
             filters.Add(new HandleErrorAttribute());
+
+            // Set authorization as default requirement
+            filters.Add(new AuthorizeAttribute());
         }
     }
 }
